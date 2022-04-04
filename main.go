@@ -78,7 +78,7 @@ func main() {
 		httpPort = "8080"
 	}
 
-	go submitter()
+	go createSubscriber()
 	e.Start(":" + httpPort)
 }
 

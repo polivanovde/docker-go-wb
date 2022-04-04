@@ -3,22 +3,13 @@ package main
 import (
 	"encoding/json"
 	"log"
-	"sync"
 	"time"
 
 	"github.com/nats-io/stan.go"
 )
 
-func submitter() {
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go createSubscriber(&wg)
-	wg.Wait()
-}
-
-func createSubscriber(wg *sync.WaitGroup) {
+func createSubscriber() {
 	log.Println("sub started")
-	defer wg.Done()
 
 	nc, err := stan.Connect("test-cluster", "client-123", stan.NatsURL("nats:4222"))
 	if err != nil {
@@ -47,4 +38,5 @@ func createSubscriber(wg *sync.WaitGroup) {
 	})
 	for { //не придумал ничего лучше чтобы получатель всегда ждал сообщений =(
 	}
+
 }
