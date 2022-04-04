@@ -1,0 +1,52 @@
+version: '3.3'
+
+services:
+  go-serv:
+    depends_on:
+      - roach
+    build:
+      context: .
+    container_name: rest-server
+    hostname: rest-server
+    networks:
+      - mynet
+    ports:
+      - 80:8080
+    environment:
+      - PGUSER=root
+      - PGPASSWORD=password
+      - PGHOST=roach
+      - PGPORT=26257
+      - PGDATABASE=pgdb
+    deploy:
+      restart_policy:
+        condition: on-failure
+  roach:
+    image: cockroachdb/cockroach:latest-v20.1
+    container_name: roach
+    hostname: roach
+    networks:
+      - mynet
+    ports:
+      - 26257:26257
+      - 8080:8080
+    volumes:
+      - roach:/cockroach/cockroach-data
+    command: start-single-node --insecure
+
+  nats:
+    image: nats-streaming:latest
+    container_name: nats
+    restart: always
+    ports:
+      - 4222:4222
+      - 8222:8222
+    networks:
+      - mynet
+
+volumes:
+  roach:
+
+networks:
+  mynet:
+    driver: bridge
