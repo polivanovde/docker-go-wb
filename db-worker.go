@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -32,30 +33,32 @@ func initStore() (*sql.DB, error) {
 		return nil, err
 	}
 
-// 	восстанавливаем в кеш последние 10 записей
-    rows, err := db.Query("SELECT order_uid,message FROM messages ORDER BY order_uid LIMIT 10")
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer rows.Close()
+	// 	восстанавливаем в кеш последние 10 записей
+	rows, err := db.Query("SELECT order_uid,message FROM messages ORDER BY order_uid LIMIT 10")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
 
-    type cacheReload struct {
-        order_uid string
-        message   string
-    }
+	type cacheReload struct {
+		order_uid string
+		message   string
+	}
 
-    for rows.Next() {
-        var chElem cacheReload
-        if err := rows.Scan(&chElem.order_uid, &chElem.message); err != nil {
-            log.Fatal(err)
-        }
-        cache.Set(chElem.order_uid, chElem.message, 5*time.Minute)
-    }
+	for rows.Next() {
+		var chElem cacheReload
+		if err := rows.Scan(&chElem.order_uid, &chElem.message); err != nil {
+			log.Fatal(err)
+		}
+		cache.Set(chElem.order_uid, chElem.message, 5*time.Minute)
+	}
 
 	return db, nil
 }
 
-func saveHandler(db *sql.DB, id, mess string) {
+func saveHandler(db *sql.DB, id, mess string, wg *sync.WaitGroup, mu *sync.Mutex) {
+	defer wg.Done()
+	mu.Lock()
 	err := crdb.ExecuteTx(context.Background(), db, nil,
 		func(tx *sql.Tx) error {
 			_, err := tx.Exec(
@@ -73,15 +76,16 @@ func saveHandler(db *sql.DB, id, mess string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	mu.Unlock()
 }
 
 func selectMessageById(db *sql.DB, mess string) string {
 	rows := db.QueryRow("SELECT message FROM messages WHERE order_uid = $1", mess)
 
 	var result string
-    if err := rows.Scan(&result); err != nil {
-        log.Println(err)
-    }
+	if err := rows.Scan(&result); err != nil {
+		log.Println(err)
+	}
 
 	return result
 }

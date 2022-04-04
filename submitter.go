@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/nats-io/stan.go"
@@ -16,6 +17,8 @@ func createSubscriber() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	wg := new(sync.WaitGroup)
+	mu := new(sync.Mutex)
 	nc.QueueSubscribe("foo", "messages", func(m *stan.Msg) {
 		if json.Valid(m.Data) {
 			if err := json.Unmarshal(m.Data, &id); err != nil {
@@ -28,13 +31,15 @@ func createSubscriber() {
 
 			if uid != "" && msg != "" {
 				cache.Set(uid, msg, 5*time.Minute)
-				saveHandler(db, uid, msg)
-				//log.Println("Received a message: %v\n", cache)
+				wg.Add(1)
+				go saveHandler(db, uid, msg, wg, mu)
+				log.Printf("Received a message: %v\n", uid)
 			} else {
 				log.Println("некорректное сообщение")
 			}
 		}
 	})
+	wg.Wait()
 	runtime.Goexit()
 
 }
