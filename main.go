@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/go/docker-go-wb/cacher" //кешер честно взят с хабра
@@ -15,11 +14,11 @@ import (
 )
 
 var (
-	cache   *cacher.Cache
-	model   ModelJson
-	id      parseSrtuct
-	db  *sql.DB
-    err error
+	cache *cacher.Cache
+	model ModelJson
+	id    parseSrtuct
+	db    *sql.DB
+	err   error
 )
 
 type Message struct {
@@ -34,10 +33,10 @@ func main() {
 	e.Use(middleware.Recover())
 
 	cache = cacher.New(5*time.Minute, 10*time.Minute)
-    db, err = initStore()
-    if err != nil {
-        log.Fatalf("failed to initialise the store: %s", err)
-    }
+	db, err = initStore()
+	if err != nil {
+		log.Fatalf("failed to initialise the store: %s", err)
+	}
 
 	e.GET("/", func(c echo.Context) error {
 		return rootHandler(db, c)
@@ -52,14 +51,14 @@ func main() {
 		if m.Value == "" {
 			mess = "Пустой запрос"
 		} else {
-		    var result string
-		    if val,ok := cache.Get(m.Value); ok == false {
+			var result string
+			if val, ok := cache.Get(m.Value); ok == false {
 				log.Println("В кеше отсутствует, выбор из БД")
-			    result = selectMessageById(db, m.Value)
-		    }else{
+				result = selectMessageById(db, m.Value)
+			} else {
 				log.Println("получил значение из кеша")
-		        result = val.(string)
-		    }
+				result = val.(string)
+			}
 			if err := json.Unmarshal([]byte(result), &model); err != nil {
 				log.Println(err)
 				mess = "Не удалось выполнить запрос"
@@ -79,18 +78,8 @@ func main() {
 		httpPort = "8080"
 	}
 
-	var wg sync.WaitGroup
-	for {
-		wg.Add(1)
-		go createSubscriber1(&wg)
-		e.Start(":" + httpPort)
-	}
-	wg.Wait()
-
-}
-func createSubscriber1(wg *sync.WaitGroup) {
-	defer wg.Done()
 	go submitter()
+	e.Start(":" + httpPort)
 }
 
 func rootHandler(db *sql.DB, c echo.Context) error {

@@ -54,8 +54,8 @@ func generateData(i int) []byte {
 	var strI string = strconv.Itoa(i)
 
 	s := ModelJson{
-	    OrderUID:    "b563feb7b2b84b6test" + strI,
-		Entry:       "WBIL" + strI,
+		OrderUID: "b563feb7b2b84b6test" + strI,
+		Entry:    "WBIL" + strI,
 		Delivery: DeliveryType{
 			Name:    "Test Testov" + strI,
 			Phone:   "+9720000000" + strI,
