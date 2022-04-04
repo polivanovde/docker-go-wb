@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"runtime"
 	"time"
 
 	"github.com/nats-io/stan.go"
@@ -15,9 +16,7 @@ func createSubscriber() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer nc.Close()
-
-	nc.Subscribe("foo", func(m *stan.Msg) {
+	nc.QueueSubscribe("foo", "messages", func(m *stan.Msg) {
 		if json.Valid(m.Data) {
 			if err := json.Unmarshal(m.Data, &id); err != nil {
 				log.Println(err)
@@ -36,7 +35,6 @@ func createSubscriber() {
 			}
 		}
 	})
-	for { //не придумал ничего лучше чтобы получатель всегда ждал сообщений =(
-	}
+	runtime.Goexit()
 
 }
