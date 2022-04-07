@@ -32,13 +32,13 @@ func createSubscriber() {
 			if uid != "" && msg != "" {
 				cache.Set(uid, msg, 5*time.Minute)
 				wg.Add(1)
-				go saveHandler(db, uid, msg, wg, mu)
+				go saveHandler(db, uid, msg, wg, mu, m)
 				log.Printf("Received a message: %v\n", uid)
 			} else {
 				log.Println("некорректное сообщение")
 			}
 		}
-	}, stan.DurableName("durable"))
+	}, stan.SetManualAckMode(), stan.DurableName("durable"))
 	wg.Wait()
 	runtime.Goexit()
 

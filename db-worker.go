@@ -11,6 +11,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cockroachdb/cockroach-go/v2/crdb"
+	"github.com/nats-io/stan.go"
 )
 
 func initStore() (*sql.DB, error) {
@@ -56,7 +57,7 @@ func initStore() (*sql.DB, error) {
 	return db, nil
 }
 
-func saveHandler(db *sql.DB, id, mess string, wg *sync.WaitGroup, mu *sync.Mutex) {
+func saveHandler(db *sql.DB, id, mess string, wg *sync.WaitGroup, mu *sync.Mutex, m *stan.Msg) {
 	defer wg.Done()
 	mu.Lock()
 	err := crdb.ExecuteTx(context.Background(), db, nil,
@@ -70,6 +71,7 @@ func saveHandler(db *sql.DB, id, mess string, wg *sync.WaitGroup, mu *sync.Mutex
 			if err != nil {
 				return err
 			}
+            m.Ack()
 			return nil
 		})
 
