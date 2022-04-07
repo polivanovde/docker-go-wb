@@ -34,7 +34,7 @@ func initStore() (*sql.DB, error) {
 	}
 
 	// 	восстанавливаем в кеш последние 10 записей
-	rows, err := db.Query("SELECT order_uid,message FROM messages ORDER BY order_uid LIMIT 10")
+	rows, err := db.Query("SELECT order_uid,message FROM messages ORDER BY id LIMIT 10")
 	if err != nil {
 		log.Fatal(err)
 	}
