@@ -3,6 +3,9 @@ create user uzer;
 grant all on database pgdb to uzer;
 create table if not exists messages
 (
+    id serial not null
+        constraint messages_pk
+            primary key,
     order_uid string not null,
     message   jsonb
 );

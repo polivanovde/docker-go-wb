@@ -38,7 +38,7 @@ func createSubscriber() {
 				log.Println("некорректное сообщение")
 			}
 		}
-	})
+	}, stan.DurableName("durable"))
 	wg.Wait()
 	runtime.Goexit()
 
